@@ -1,10 +1,15 @@
+import logging
 import sys
 import time
-import logging
-from watchdog.observers import Observer
-from watchdog.events import LoggingEventHandler, FileSystemEventHandler
-from daemon import DaemonContext
+import os
 
+import redis
+from daemon import DaemonContext
+from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+
+
+BASE_KEY = "json:"
 
 class FileChangeHandler(FileSystemEventHandler):
 
@@ -14,14 +19,22 @@ class FileChangeHandler(FileSystemEventHandler):
     def on_modified(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("modified = " + str(event.src_path))
+            r = redis.StrictRedis()
+            img = open(event.src_path,"rb").read()
+            r.set(BASE_KEY + os.path.basename(event.src_path),img)
 
     def on_created(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("created = " + str(event.src_path))
+            r = redis.StrictRedis()
+            img = open(event.src_path,"rb").read()
+            r.set(BASE_KEY + os.path.basename(event.src_path),img)
 
     def on_deleted(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("deleted = " + str(event.src_path))
+            r = redis.StrictRedis()
+            r.delete(BASE_KEY + os.path.basename(event.src_path))
 
 
 def do_launch_main_program(logger):
