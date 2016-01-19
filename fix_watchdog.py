@@ -1,40 +1,38 @@
 import logging
 import sys
 import time
-import os
 
 import redis
 from daemon import DaemonContext
+from rq import Queue
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
+from func import add_key_to_redis
+from func import delete_key_from_redis
+from func import update_key_in_redis
 
-BASE_KEY = "json:"
 
 class FileChangeHandler(FileSystemEventHandler):
 
     def __init__(self, logger):
         self.logger = logger
+        self.q = Queue(connection=redis.Redis())
 
     def on_modified(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("modified = " + str(event.src_path))
-            r = redis.StrictRedis()
-            img = open(event.src_path,"rb").read()
-            r.set(BASE_KEY + os.path.basename(event.src_path),img)
+            self.q.enqueue(update_key_in_redis, event.src_path)
 
     def on_created(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("created = " + str(event.src_path))
-            r = redis.StrictRedis()
-            img = open(event.src_path,"rb").read()
-            r.set(BASE_KEY + os.path.basename(event.src_path),img)
+            self.q.enqueue(add_key_to_redis, event.src_path)
 
     def on_deleted(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("deleted = " + str(event.src_path))
-            r = redis.StrictRedis()
-            r.delete(BASE_KEY + os.path.basename(event.src_path))
+            self.q.enqueue(delete_key_from_redis, event.src_path)
 
 
 def do_launch_main_program(logger):

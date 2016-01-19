@@ -11,5 +11,5 @@ job = q.enqueue(count_words_at_url, 'http://nvie.com')
 print(job.result)   # => None
 
 # Now, wait a while, until the worker is finished
-time.sleep(2)
+time.sleep(3)
 print(job.result)   # => 889
