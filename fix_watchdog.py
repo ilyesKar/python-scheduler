@@ -39,13 +39,13 @@ def do_launch_main_program(logger):
 
 
 def run():
-    # logging.basicConfig(filename="fix-watchdog.log", level=logging.INFO,
+    # logging.basicConfig(filename="fix_watchdog.log", level=logging.INFO,
     #                     format='%(asctime)s - %(message)s',
     #                     datefmt='%Y-%m-%d %H:%M:%S')
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
-    fh = logging.FileHandler("./fix-watchdog.log")
+    fh = logging.FileHandler("./fix_watchdog.log")
     logger.addHandler(fh)
     with DaemonContext(files_preserve=[fh.stream, ], ):
         do_launch_main_program(logger)
