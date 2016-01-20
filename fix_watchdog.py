@@ -1,38 +1,56 @@
 import logging
+import os
+import pickle
 import sys
 import time
 
-import redis
+import pika
 from daemon import DaemonContext
-from rq import Queue
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from func import add_key_to_redis
-from func import delete_key_from_redis
-from func import update_key_in_redis
+WATCHDOG_QUEUE = 'watchdog'
 
 
 class FileChangeHandler(FileSystemEventHandler):
 
     def __init__(self, logger):
         self.logger = logger
-        self.q = Queue(connection=redis.Redis())
+        # self.q = Queue(connection=redis.Redis())
+
+    def send_to_scheduler(self, event, path):
+        connection = pika.BlockingConnection(pika.ConnectionParameters(
+                           'localhost'))
+
+        if event != 'deletion':
+            body_content = {'event': event, 'fileName': os.path.basename(path), 'file': open(path).read()}
+        else:
+            body_content = {'event': event, 'fileName': os.path.basename(path)}
+
+        channel = connection.channel()
+        channel.queue_declare(queue=WATCHDOG_QUEUE)
+        channel.basic_publish(exchange='',
+                              routing_key=WATCHDOG_QUEUE,
+                              body=pickle.dumps(body_content))
+        connection.close()
 
     def on_modified(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("modified = " + str(event.src_path))
-            self.q.enqueue(update_key_in_redis, event.src_path)
+            # self.q.enqueue(update_key_in_redis, event.src_path)
+            self.send_to_scheduler('modification', event.src_path)
 
     def on_created(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("created = " + str(event.src_path))
-            self.q.enqueue(add_key_to_redis, event.src_path)
+            # self.q.enqueue(add_key_to_redis, event.src_path)
+            self.send_to_scheduler('creation', event.src_path)
 
     def on_deleted(self, event):
         if event.src_path[-5:] == ".json":
             self.logger.debug("deleted = " + str(event.src_path))
-            self.q.enqueue(delete_key_from_redis, event.src_path)
+            # self.q.enqueue(delete_key_from_redis, event.src_path)
+            self.send_to_scheduler('deletion', event.src_path)
 
 
 def do_launch_main_program(logger):
