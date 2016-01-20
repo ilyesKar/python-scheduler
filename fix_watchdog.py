@@ -12,7 +12,6 @@ from watchdog_functions import send_to_scheduler
 
 
 class FileChangeHandler(FileSystemEventHandler):
-
     def __init__(self, logger):
         self.logger = logger
         self.q = Queue(connection=redis.Redis())
@@ -54,6 +53,7 @@ def run():
     logger.addHandler(fh)
     with DaemonContext(files_preserve=[fh.stream, ], ):
         do_launch_main_program(logger)
+
 
 if __name__ == "__main__":
     run()

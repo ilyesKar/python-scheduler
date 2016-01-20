@@ -29,7 +29,7 @@ def run_watchdog_consumer():
     with DaemonContext(files_preserve=[fh.stream, ], ):
         try:
             connection = pika.BlockingConnection(pika.ConnectionParameters(
-            host='localhost'))
+                    host='localhost'))
             channel = connection.channel()
 
             channel.queue_declare(queue=WATCHDOG_QUEUE)

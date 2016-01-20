@@ -1,6 +1,5 @@
 import redis
 
-
 BASE_KEY = 'watchdog:json:'
 
 
