@@ -7,7 +7,7 @@ import redis
 from daemon import DaemonContext
 from rq import Queue
 
-from func import delete_key_from_redis, add_key_to_redis
+from scheduler_functions import delete_key_from_redis, add_key_to_redis
 
 WATCHDOG_QUEUE = 'watchdog'
 

@@ -8,7 +8,7 @@ from rq import Queue
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from func import send_to_scheduler
+from watchdog_functions import send_to_scheduler
 
 
 class FileChangeHandler(FileSystemEventHandler):
